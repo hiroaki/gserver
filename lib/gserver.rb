@@ -130,6 +130,12 @@ class GServer
     @shutdown = true
   end
 
+  # Graceful shutdown for the server
+  def shutdown_gracefully
+    shutdown
+    @tcpServer.close
+  end
+
   # Return the current number of connected clients
   def connections
     @connections.size
