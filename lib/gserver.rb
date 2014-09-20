@@ -261,8 +261,8 @@ class GServer
              end
           }
           client = @tcpServer.accept
+          @connections << client
           Thread.new(client)  { |myClient|
-            @connections << Thread.current
             begin
               myPort = myClient.peeraddr[1]
               serve(myClient) if !@audit or connecting(myClient)
@@ -274,7 +274,7 @@ class GServer
               rescue
               end
               @connectionsMutex.synchronize {
-                @connections.delete(Thread.current)
+                @connections.delete(myClient)
                 @connectionsCV.signal
               }
               disconnecting(myPort) if @audit
@@ -295,7 +295,11 @@ class GServer
              end
           }
         else
-          @connections.each { |c| c.raise "stop" }
+          Thread.list.each  { |t|
+            unless [Thread.main, @tcpServerThread].include?(t)
+              t.raise "stop"
+            end
+          }
         end
         @tcpServerThread = nil
         @@servicesMutex.synchronize  {
